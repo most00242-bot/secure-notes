@@ -1,0 +1,322 @@
+
+
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --ink:#1a1a1a;--ink2:#555;--ink3:#888;--surface:#fff;--surface2:#f5f4f1;--surface3:#eeece8;
+    --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);--accent:#2d6a4f;--accent-light:#e8f5ee;
+    --accent-text:#1a4731;--danger:#c0392b;--danger-light:#fdecea;--amber:#b45309;--amber-light:#fef3c7;
+    --shadow:0 2px 8px rgba(0,0,0,0.08);--r:10px;
+  }
+  @media(prefers-color-scheme:dark){:root{
+    --ink:#f0ede8;--ink2:#a8a49e;--ink3:#6b6760;--surface:#1c1b18;--surface2:#252420;--surface3:#2e2d29;
+    --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);--accent:#4ade80;--accent-light:#052e16;
+    --accent-text:#bbf7d0;--danger:#f87171;--danger-light:#450a0a;--amber:#fcd34d;--amber-light:#451a03;
+  }}
+  body,#app{font-family:'Georgia',serif;background:var(--surface2);color:var(--ink);min-height:100vh}
+  #app{display:flex;flex-direction:column;min-height:600px}
+
+  /* LOCK SCREEN */
+  #lock-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:2rem;gap:1.5rem}
+  .lock-icon{width:64px;height:64px;background:var(--surface3);border:0.5px solid var(--border2);border-radius:50%;display:flex;align-items:center;justify-content:center}
+  .lock-icon svg{width:28px;height:28px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round}
+  .lock-title{font-size:22px;font-weight:400;letter-spacing:-0.02em;color:var(--ink)}
+  .lock-sub{font-size:13px;color:var(--ink3);font-family:'Georgia',serif;font-style:italic}
+  .pin-dots{display:flex;gap:12px;margin:0.5rem 0}
+  .pin-dot{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--border2);background:transparent;transition:background 0.15s}
+  .pin-dot.filled{background:var(--accent);border-color:var(--accent)}
+  .numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:220px}
+  .num-btn{height:52px;background:var(--surface);border:0.5px solid var(--border);border-radius:var(--r);font-size:18px;font-family:'Georgia',serif;color:var(--ink);cursor:pointer;transition:background 0.1s}
+  .num-btn:hover{background:var(--surface3)}
+  .num-btn:active{transform:scale(0.96)}
+  .lock-error{font-size:12px;color:var(--danger);height:16px;text-align:center;font-family:monospace}
+  .unlock-hint{font-size:11px;color:var(--ink3);font-style:italic}
+
+  /* HEADER */
+  #header{display:flex;align-items:center;padding:14px 20px;border-bottom:0.5px solid var(--border);background:var(--surface);gap:12px}
+  .header-icon{width:32px;height:32px;background:var(--accent-light);border-radius:8px;display:flex;align-items:center;justify-content:center}
+  .header-icon svg{width:16px;height:16px;stroke:var(--accent);fill:none;stroke-width:2;stroke-linecap:round}
+  .header-title{font-size:15px;font-weight:400;letter-spacing:-0.01em;flex:1}
+  .header-sub{font-size:11px;color:var(--ink3);font-family:monospace}
+  .lock-btn{background:none;border:0.5px solid var(--border);border-radius:6px;padding:6px 10px;font-size:11px;color:var(--ink3);cursor:pointer;font-family:'Georgia',serif}
+  .lock-btn:hover{border-color:var(--border2);color:var(--ink2)}
+
+  /* MAIN LAYOUT */
+  #main{display:flex;flex:1;overflow:hidden}
+  #sidebar{width:240px;border-right:0.5px solid var(--border);background:var(--surface);display:flex;flex-direction:column}
+  .sidebar-search{padding:12px;border-bottom:0.5px solid var(--border)}
+  .sidebar-search input{width:100%;padding:8px 10px;background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'Georgia',serif;color:var(--ink);outline:none}
+  .sidebar-search input:focus{border-color:var(--accent)}
+  .sidebar-actions{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:0.5px solid var(--border)}
+  .sidebar-label{font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.08em;font-family:monospace}
+  .new-btn{background:var(--accent);border:none;border-radius:6px;padding:5px 10px;font-size:12px;color:var(--surface);cursor:pointer;font-family:'Georgia',serif}
+  .new-btn:hover{opacity:0.88}
+  #note-list{flex:1;overflow-y:auto;padding:6px}
+  .note-item{padding:10px 12px;border-radius:8px;cursor:pointer;border:0.5px solid transparent;margin-bottom:2px;transition:background 0.1s}
+  .note-item:hover{background:var(--surface2)}
+  .note-item.active{background:var(--accent-light);border-color:var(--accent)}
+  .note-item-title{font-size:13px;font-weight:400;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .note-item.active .note-item-title{color:var(--accent-text)}
+  .note-item-preview{font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;font-family:monospace}
+  .note-item-meta{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+  .note-date{font-size:10px;color:var(--ink3);font-family:monospace}
+  .pin-badge{font-size:9px;background:var(--amber-light);color:var(--amber);border-radius:4px;padding:1px 5px;font-family:monospace}
+
+  /* EDITOR */
+  #editor{flex:1;display:flex;flex-direction:column;background:var(--surface)}
+  #empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--ink3)}
+  #empty-state svg{width:40px;height:40px;stroke:var(--ink3);fill:none;stroke-width:1.5;opacity:0.5}
+  #empty-state p{font-size:13px;font-style:italic}
+  #note-editor{flex:1;display:flex;flex-direction:column}
+  .editor-toolbar{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:0.5px solid var(--border)}
+  .tag-badge{display:inline-flex;align-items:center;gap:4px;background:var(--surface2);border:0.5px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--ink2);font-family:monospace;cursor:pointer}
+  .tag-badge:hover{border-color:var(--border2)}
+  .toolbar-right{margin-left:auto;display:flex;gap:6px}
+  .tool-btn{background:none;border:0.5px solid var(--border);border-radius:6px;padding:5px 9px;font-size:11px;color:var(--ink3);cursor:pointer;font-family:monospace}
+  .tool-btn:hover{color:var(--ink);border-color:var(--border2)}
+  .tool-btn.danger:hover{color:var(--danger);border-color:var(--danger)}
+  .tool-btn.pin-active{color:var(--amber);border-color:var(--amber);background:var(--amber-light)}
+  .enc-badge{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--accent);font-family:monospace;padding:3px 8px;background:var(--accent-light);border-radius:5px}
+  .title-input{padding:16px 18px 8px;font-size:20px;font-family:'Georgia',serif;border:none;background:transparent;color:var(--ink);outline:none;width:100%}
+  .title-input::placeholder{color:var(--ink3)}
+  .body-input{flex:1;padding:8px 18px 16px;font-size:14px;font-family:'Georgia',serif;border:none;background:transparent;color:var(--ink);outline:none;resize:none;line-height:1.75;width:100%}
+  .body-input::placeholder{color:var(--ink3)}
+  .editor-footer{padding:8px 18px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:10px}
+  .word-count{font-size:10px;color:var(--ink3);font-family:monospace}
+  .save-indicator{font-size:10px;color:var(--accent);font-family:monospace;opacity:0}
+  .save-indicator.show{opacity:1}
+
+  .hidden{display:none!important}
+  #lock-screen,#main,#header{display:none}
+  #lock-screen.visible,#main.visible{display:flex}
+  #header.visible{display:flex}
+</style>
+
+<div id="app">
+  <div id="lock-screen" class="visible">
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div style="text-align:center">
+      <div class="lock-title">Secure Notes</div>
+      <div class="lock-sub">Enter your PIN to unlock</div>
+    </div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    <div class="numpad" id="numpad"></div>
+    <div class="lock-error" id="lock-error"></div>
+    <div class="unlock-hint">Password Now 3333 okay</div>
+  </div>
+
+  <div id="header">
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
+    <span class="header-title">Secure Notes</span>
+    <span class="header-sub" id="note-count">— notes</span>
+    <button class="lock-btn" onclick="lockApp()">Lock</button>
+  </div>
+
+  <div id="main">
+    <div id="sidebar">
+      <div class="sidebar-search">
+        <input type="text" placeholder="Search notes..." id="search-input" oninput="renderList()">
+      </div>
+      <div class="sidebar-actions">
+        <span class="sidebar-label">Notes</span>
+        <button class="new-btn" onclick="newNote()">+ New</button>
+      </div>
+      <div id="note-list"></div>
+    </div>
+    <div id="editor">
+      <div id="empty-state">
+        <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <p>Select a note or create a new one</p>
+      </div>
+      <div id="note-editor" class="hidden">
+        <div class="editor-toolbar">
+          <div class="tag-badge" onclick="cycleTag()" id="tag-display">Personal</div>
+          <div class="toolbar-right">
+            <div class="enc-badge">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              encrypted
+            </div>
+            <button class="tool-btn" id="pin-btn" onclick="togglePin()">pin</button>
+            <button class="tool-btn danger" onclick="deleteNote()">delete</button>
+          </div>
+        </div>
+        <input class="title-input" id="note-title" placeholder="Note title..." oninput="autoSave()">
+        <textarea class="body-input" id="note-body" placeholder="Start writing..." oninput="autoSave()"></textarea>
+        <div class="editor-footer">
+          <span class="word-count" id="word-count">0 words</span>
+          <span class="save-indicator" id="save-indicator">saved</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const TAGS = ['Personal','Work','Ideas','Journal'];
+const CORRECT_PIN = '3333';
+let pinInput = '';
+let notes = [
+  {id:1,title:'Welcome to Secure Notes',body:'Your notes are private and encrypted. Only you can access them with your PIN.\n\nTap any note to edit, or press + New to create one.',tag:'Personal',pinned:true,date:'2025-05-01'},
+  {id:2,title:'Shopping list',body:'— Olive oil\n— Sourdough bread\n— Parmesan\n— Cherry tomatoes\n— Fresh basil',tag:'Personal',pinned:false,date:'2025-05-03'},
+  {id:3,title:'Q2 goals',body:'1. Finish the product redesign\n2. Ship the mobile app\n3. Hire two engineers\n4. Improve onboarding retention by 20%',tag:'Work',pinned:false,date:'2025-05-05'},
+  {id:4,title:'Story idea',body:'A cartographer who draws maps of places that don\'t exist yet, only to find travelers returning from them.',tag:'Ideas',pinned:false,date:'2025-05-06'},
+];
+let nextId = 5;
+let activeId = null;
+let saveTimer = null;
+
+function buildNumpad(){
+  const np = document.getElementById('numpad');
+  [1,2,3,4,5,6,7,8,9,'',0,'⌫'].forEach(k=>{
+    const b = document.createElement('button');
+    b.className='num-btn'; b.textContent=k;
+    if(k===''){b.style.visibility='hidden';}
+    b.onclick=()=>handlePin(String(k));
+    np.appendChild(b);
+  });
+}
+
+function handlePin(k){
+  const err = document.getElementById('lock-error');
+  err.textContent='';
+  if(k==='⌫'){pinInput=pinInput.slice(0,-1);}
+  else if(pinInput.length<4){pinInput+=k;}
+  updateDots();
+  if(pinInput.length===4){
+    if(pinInput===CORRECT_PIN){
+      setTimeout(unlock,120);
+    } else {
+      err.textContent='Incorrect PIN. Try again.';
+      pinInput='';
+      updateDots();
+      const dots = document.querySelectorAll('.pin-dot');
+      dots.forEach(d=>{d.style.background='var(--danger)';});
+      setTimeout(()=>dots.forEach(d=>{d.classList.remove('filled');d.style.background='';}),600);
+    }
+  }
+}
+
+function updateDots(){
+  document.querySelectorAll('.pin-dot').forEach((d,i)=>{
+    d.classList.toggle('filled', i<pinInput.length);
+  });
+}
+
+function unlock(){
+  document.getElementById('lock-screen').classList.remove('visible');
+  document.getElementById('header').classList.add('visible');
+  document.getElementById('main').classList.add('visible');
+  pinInput='';
+  updateDots();
+  renderList();
+}
+
+function lockApp(){
+  document.getElementById('lock-screen').classList.add('visible');
+  document.getElementById('header').classList.remove('visible');
+  document.getElementById('main').classList.remove('visible');
+  activeId=null;
+}
+
+function renderList(){
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const list = document.getElementById('note-list');
+  list.innerHTML='';
+  const sorted = [...notes].sort((a,b)=>(b.pinned-a.pinned)||(b.date>a.date?1:-1));
+  const filtered = q ? sorted.filter(n=>n.title.toLowerCase().includes(q)||n.body.toLowerCase().includes(q)) : sorted;
+  filtered.forEach(n=>{
+    const d=document.createElement('div');
+    d.className='note-item'+(n.id===activeId?' active':'');
+    d.onclick=()=>openNote(n.id);
+    d.innerHTML=`
+      <div class="note-item-title">${n.title||'Untitled'}</div>
+      <div class="note-item-preview">${n.body.replace(/\n/g,' ').substring(0,60)}</div>
+      <div class="note-item-meta">
+        <span class="note-date">${n.date}</span>
+        ${n.pinned?'<span class="pin-badge">pinned</span>':''}
+      </div>`;
+    list.appendChild(d);
+  });
+  document.getElementById('note-count').textContent = `${notes.length} note${notes.length!==1?'s':''}`;
+}
+
+function openNote(id){
+  activeId=id;
+  const n=notes.find(x=>x.id===id);
+  document.getElementById('empty-state').classList.add('hidden');
+  document.getElementById('note-editor').classList.remove('hidden');
+  document.getElementById('note-title').value=n.title;
+  document.getElementById('note-body').value=n.body;
+  document.getElementById('tag-display').textContent=n.tag;
+  const pb=document.getElementById('pin-btn');
+  pb.textContent=n.pinned?'unpin':'pin';
+  pb.className='tool-btn'+(n.pinned?' pin-active':'');
+  updateWordCount();
+  renderList();
+}
+
+function autoSave(){
+  if(!activeId) return;
+  const n=notes.find(x=>x.id===activeId);
+  n.title=document.getElementById('note-title').value;
+  n.body=document.getElementById('note-body').value;
+  n.date=new Date().toISOString().slice(0,10);
+  updateWordCount();
+  renderList();
+  const ind=document.getElementById('save-indicator');
+  ind.classList.add('show');
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(()=>ind.classList.remove('show'),1500);
+}
+
+function updateWordCount(){
+  const body=document.getElementById('note-body').value;
+  const wc=body.trim()===''?0:body.trim().split(/\s+/).length;
+  document.getElementById('word-count').textContent=`${wc} word${wc!==1?'s':''}`;
+}
+
+function newNote(){
+  const n={id:nextId++,title:'',body:'',tag:'Personal',pinned:false,date:new Date().toISOString().slice(0,10)};
+  notes.unshift(n);
+  openNote(n.id);
+  setTimeout(()=>document.getElementById('note-title').focus(),50);
+}
+
+function togglePin(){
+  if(!activeId) return;
+  const n=notes.find(x=>x.id===activeId);
+  n.pinned=!n.pinned;
+  const pb=document.getElementById('pin-btn');
+  pb.textContent=n.pinned?'unpin':'pin';
+  pb.className='tool-btn'+(n.pinned?' pin-active':'');
+  renderList();
+}
+
+function cycleTag(){
+  if(!activeId) return;
+  const n=notes.find(x=>x.id===activeId);
+  n.tag=TAGS[(TAGS.indexOf(n.tag)+1)%TAGS.length];
+  document.getElementById('tag-display').textContent=n.tag;
+  renderList();
+}
+
+function deleteNote(){
+  if(!activeId) return;
+  const idx=notes.findIndex(x=>x.id===activeId);
+  if(idx<0) return;
+  notes.splice(idx,1);
+  activeId=null;
+  document.getElementById('empty-state').classList.remove('hidden');
+  document.getElementById('note-editor').classList.add('hidden');
+  renderList();
+}
+
+buildNumpad();
+</script>
